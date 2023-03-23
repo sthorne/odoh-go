@@ -323,6 +323,45 @@ func UnmarshalObliviousDoHConfigs(buffer []byte) (ObliviousDoHConfigs, error) {
 	return CreateObliviousDoHConfigs(configs), nil
 }
 
+func UnmarshalObliviousDoHSVCBConfigs(buffer []byte) (ObliviousDoHConfigs, error) {
+	if len(buffer) < 2 {
+		return ObliviousDoHConfigs{}, errors.New("Invalid ObliviousDoHConfigs encoding")
+	}
+
+	configs := make([]ObliviousDoHConfig, 0)
+	length := uint16(len(buffer))
+	offset := uint16(0)
+
+	for {
+		configVersion, configLength, err := parseConfigHeader(buffer[offset:])
+		if err != nil {
+			return ObliviousDoHConfigs{}, errors.New("Invalid ObliviousDoHConfigs encoding")
+		}
+
+		if uint16(len(buffer[offset:])) < configLength {
+			// The configs vector is encoded incorrectly, so discard the whole thing
+			return ObliviousDoHConfigs{}, errors.New(fmt.Sprintf("Invalid serialized ObliviousDoHConfig, expected %v bytes, got %v", length, len(buffer[offset:])))
+		}
+
+		if isSupportedConfigVersion(configVersion) {
+			config, err := UnmarshalObliviousDoHConfig(buffer[offset:])
+			if err == nil {
+				configs = append(configs, config)
+			}
+		} else {
+			// Skip over unsupported versions
+		}
+
+		offset += 4 + configLength
+		if offset >= 2+length {
+			// Stop reading
+			break
+		}
+	}
+
+	return CreateObliviousDoHConfigs(configs), nil
+}
+
 type ObliviousDoHKeyPair struct {
 	Config    ObliviousDoHConfig
 	secretKey hpke.KEMPrivateKey
