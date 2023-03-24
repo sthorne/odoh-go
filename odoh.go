@@ -333,8 +333,10 @@ func UnmarshalObliviousDoHSVCBConfigs(buffer []byte) (ObliviousDoHConfigs, error
 	offset := uint16(0)
 
 	for {
+
 		configVersion, configLength, err := parseConfigHeader(buffer[offset:])
 		if err != nil {
+			//fmt.Printf("parseConfigHeader len(%d) offset(%d) err: %s\n", len(buffer), offset, err)
 			return ObliviousDoHConfigs{}, errors.New("Invalid ObliviousDoHConfigs encoding")
 		}
 
@@ -353,7 +355,7 @@ func UnmarshalObliviousDoHSVCBConfigs(buffer []byte) (ObliviousDoHConfigs, error
 		}
 
 		offset += 4 + configLength
-		if offset >= 2+length {
+		if offset >= length {
 			// Stop reading
 			break
 		}
